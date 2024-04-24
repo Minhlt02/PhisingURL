@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="This website is develop for identify the safety of url.">
+    <meta name="keywords" content="phishing url,phishing,cyber security,machine learning,classifier,python">
+    <meta name="author" content="VAIBHAV BICHAVE">
+
+    <!-- BootStrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+        
+    <link href="static/styles.css" rel="stylesheet">
+    <title>URL detection</title>
+    
+</head>
+
+<body>
+<div class=" container">
+    <div class="row">
+        <div class="form col-md" id="form1">
+            <h2>DỰ ĐOÁN ĐỘ AN TOÀN</h2>
+    
+            <br>
+            <form action="/" method ="post">
+                <input type="text" class="form__input" name ='url' id="url" placeholder="Nhập đường dẫn" required="" />
+                <label for="url" class="form__label">URL</label>
+                <select class="select-form" aria-label=".form-select-lg example" name="model">
+                  <option>Chọn mô hình ...</option>
+                  <option value="Random Forest">Random Forest</option>
+                  <option value="Support Vector Machine">Support Vector Machine</option>
+                  <option value="Gradient Boost Classifier">Gradient Boost Classifier</option>
+                </select>
+    
+                <button class="button" role="button" >Kiểm tra</button>
+            </form>
+           
+    </div>
+    
+    <div class="col-md" id="form2">
+        
+        <br>
+        <h6 class = "right "><a href= {{ url }} target="_blank" >{{ url }}</a></h6>
+        <h5 class = "right "><p>Mô hình: {{ model }}</p></h5>
+        <br>
+        <h3 id="prediction"></h3>
+        <button class="button2" id="button2" role="button" onclick="window.open('{{url}}')" target="_blank" >Vẫn muốn tiếp tục</button>
+        <button class="button1" id="button1" role="button"  onclick="window.open('{{url}}')" target="_blank">Tiếp tục</button>
+    </div> 
+</div>
+<br>
+</div>
+
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+  
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    
+    <script>
+        
+            let x = '{{xx}}';
+            let num = x*100;
+            if (0<=x && x<0.50){
+                num = 100-num;
+            }
+            let txtx = num.toString();
+            if(x<=1 && x>=0.50){
+                var label = "Website "+txtx +"% an toàn để sử dụng...";
+                document.getElementById("prediction").innerHTML = label;
+                document.getElementById("button1").style.display="block";
+            }
+            else if (0<=x && x<0.50){
+                var label = "Website "+txtx +"% không an toàn để sử dụng..."
+                document.getElementById("prediction").innerHTML = label ;
+                document.getElementById("button2").style.display="block";
+            }
+        
+    </script>
+    
+</body>
+
+</html>
+
