@@ -16,4 +16,4 @@ Cài đặt
 3. python app.py
 4. Chương trình sẽ được chạy và có đường dẫn: 127.0.0.1:5000
 5. Người dùng nhập đường dẫn vào ô input
-6.
+6. Bấm kiểm tra và nhận kết quả
