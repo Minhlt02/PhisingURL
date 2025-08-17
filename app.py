@@ -1,50 +1,76 @@
-#importing required libraries
-
 from flask import Flask, request, render_template
 import numpy as np
-import pandas as pd
-from sklearn import metrics 
-import warnings
 import pickle
-warnings.filterwarnings('ignore')
+import keras
+import warnings
+import pandas as pd
 from feature import FeatureExtraction
+from gpt_url_checker import check_with_openrouter
 
+warnings.filterwarnings('ignore')
 app = Flask(__name__)
 
-models = {
-    '0' : "pickle/model_gbc.pkl",
-    'Random Forest': "pickle/model_rf.pkl",
-    'Support Vector Machine': "pickle/model_svm.pkl",
-    'Gradient Boost Classifier': "pickle/model_gbc.pkl"
-}
+# ==== Load mô hình & thông tin huấn luyện ====
+# Danh sách 28 đặc trưng đã chọn lúc train
+selected_features = pickle.load(open('pickle/selected_features.pkl', 'rb'))
 
-# file = open("pickle/model_rf.pkl","rb")
-# rf = pickle.load(file)
-# file.close()
+# Scaler đã fit trên tập huấn luyện
+scaler = pickle.load(open('pickle/scaler1.pkl', 'rb'))
+
+# Model con
+rf_model = pickle.load(open('pickle/model_rf1.pkl', 'rb'))
+dl_model = keras.saving.load_model('pickle/model_dl1.keras')
+meta_model = pickle.load(open('pickle/model_meta1.pkl', 'rb'))  # Meta model
+
+def get_dl_probs(model, X):
+    """Lấy xác suất từ Deep Learning model."""
+    probs = model.predict(X, verbose=0)
+    return probs.flatten()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        select = request.form.get('model')
-        model_path = models[str(select)]
-        model = open(model_path, 'rb')
-        pickled_model = pickle.load(model)
-        model.close
-        
         url = request.form["url"]
+
+        # ==== 1. Trích xuất toàn bộ feature ====
         obj = FeatureExtraction(url)
-        x = np.array(obj.getFeaturesList()).reshape(1,30) 
+        all_features = np.array(obj.get_features_list()).reshape(1, 50)
 
-        y_pred = pickled_model.predict(x)[0]
-        #1 is safe       
-        #-1 is unsafe
-        y_pro_phishing = pickled_model.predict_proba(x)[0,0]
-        y_pro_non_phishing = pickled_model.predict_proba(x)[0,1]
-        # if(y_pred ==1 ):
-        pred = "It is {0:.2f} % safe to go ".format(y_pro_phishing*100)
-        return render_template('index.html',xx =round(y_pro_non_phishing,2),url=url,model=select )
-    return render_template("index.html", xx =-1)
+        # ==== 3. Chuẩn hóa ====
+        features_scaled = scaler.transform(all_features)
 
+
+        # ==== 4. Dự đoán từng model con ====
+        rf_probs = rf_model.predict_proba(features_scaled)[:, 1]  # RF prob
+        dl_probs = get_dl_probs(dl_model, features_scaled)        # DL prob
+
+        # ==== 5. Meta model ====
+        combined_features = np.vstack([rf_probs, dl_probs]).T
+        meta_probs = meta_model.predict_proba(combined_features)[:, 1]
+        y_pred = meta_model.predict(combined_features)[0]
+
+        predicted_class = "Safe" if y_pred == 0 else "Phishing"
+
+        # ==== 6. Kết hợp với AI checker ====
+        ai_result = check_with_openrouter(url)
+
+        if predicted_class == "Phishing" and ai_result == "Phishing":
+            final_result = "Phishing"
+        elif predicted_class == "Safe" and ai_result == "Safe":
+            final_result = "Safe"
+        else:
+            final_result = f"Suspicious (ML says {predicted_class}, AI says {ai_result})"
+
+        return render_template(
+            'index.html',
+            xx=final_result,
+            url=url,
+            model="Ensemble (RF + DL + Meta)",
+            ml_result=predicted_class,
+            ai_result=ai_result
+        )
+
+    return render_template("index.html", xx=-1)
 
 if __name__ == "__main__":
     app.run(debug=True)
