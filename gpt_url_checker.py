@@ -1,35 +1,42 @@
 import requests
 
 def check_with_openrouter(url_to_check):
-    API_KEY = "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"  # Thay bằng key bạn lấy ở bước 1
+    API_KEY = "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"
 
     response = requests.post(
         "https://openrouter.ai/api/v1/chat/completions",
         headers={
             "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost",
-            "X-Title": "My Phishing Checker",
         },
         json={
-            "model": "openai/gpt-oss-20b:free",
+            "model": "deepseek/deepseek-r1-0528-qwen3-8b:free",
             "messages": [
-                {"role": "system", "content": """You are a cybersecurity expert specialized in detecting phishing websites. Analyze the given URL and return only "Phishing" or "Safe"."""},
-                {"role": "user", "content": f"Check if this URL is safe: {url_to_check}"}
+                {"role": "system", "content": """
+You are a cybersecurity classifier.
+Your task: Given a URL, respond with only ONE of the following words:
+- "Phishing"
+- "Safe"
+Do not explain, do not add anything else.
+"""}, 
+                {"role": "user", "content": f"Check this URL: {url_to_check}"}
             ],
-            "temperature": 0.3
+            "temperature": 0
         }
     )
 
     try:
         data = response.json()
+        print("DEBUG:", data)  # để kiểm tra nếu lỗi
+
         if "choices" in data and len(data["choices"]) > 0:
             result = data["choices"][0]["message"]["content"].strip().lower()
-            if "phishing" in result:
+            if result == "phishing":
                 return "Phishing"
-            elif "safe" in result:
+            elif result == "safe":
                 return "Safe"
         return "Error"
-    except Exception:
+    except Exception as e:
+        print("Exception:", e)
+        print("Raw response:", response.text)
         return "Error"
-
